@@ -1,12 +1,14 @@
 import cv2
 import numpy as np
+from skimage.measure import ransac
+from skimage.transform import FundamentalMatrixTransform
 
 class Extractor(object):
 	GX = 16//2
 	GY = 16//2
 	def __init__(self):
 		self.orb = cv2.ORB_create(100)
-		self.bf = cv2.BFMatcher()
+		self.bf = cv2.BFMatcher(cv2.NORM_HAMMING)
 		self.last = None
 
 	def extract(self, img):
@@ -20,7 +22,23 @@ class Extractor(object):
 		# matching
 		matches = None
 		self.last = {'kps': kps, 'des': des}
+		ret = []
 		if self.last is not None:
-			matches = self.bf.match(des, self.last['des'])
+			matches = self.bf.knnMatch(des, self.last['des'], k = 2)
+			for m, n in matches:
+				if m.distance < 0.75 * n.distance:
+					kp1 = kps[m.queryIdx].pt
+					kp2 = self.last['kps'][m.trainIdx].pt
+					ret.append((kp1, kp2))
 
-		return kps, des, matches
+		# filter
+		if len(ret) > 0:
+			ret = np.asarray(ret)
+			model, inliners = ransac((ret[:, 0], ret[:, 1]), 
+										FundamentalMatrixTransform, 
+										min_samples = 8, 
+										residual_threshold = 0.01, 
+										max_trials = 100)
+			ret = ret[inliners]
+		self.last = {'kps': kps, 'des': des}
+		return ret

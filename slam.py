@@ -10,14 +10,14 @@ fe = Extractor()
 def process_frame(img):
 	img = cv2.resize(img, (960, 540))
 	# find the keypoints with ORB
-	kps, des, matches = fe.extract(img)
-	for p in kps:
-		u,v = map(lambda x: int(round(x)), p.pt)
-		cv2.circle(img, (u,v), 5, (0, 255, 0), 1)
+	matches = fe.extract(img)
+	for p1, p2 in matches:
+		u1, v1 = map(lambda x: int(round(x)), p1)
+		u2, v2 = map(lambda x: int(round(x)), p2)
+		cv2.line(img, (u1, v1), (u2, v2), (0, 255, 0), 1)
+		# cv2.circle(img, (u,v), 5, (0, 255, 0), 1)
 			
-	# for point in kp:
-	# 	u,v = map(lambda x: int(round(x)), point.pt)
-	# 	cv2.circle(img, (u,v), 5, (0, 255, 0), 1)
+	# filter
 
 	cv2.imshow("result", img)
 	cv2.waitKey(1)
