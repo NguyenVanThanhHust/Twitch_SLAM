@@ -6,7 +6,7 @@ from extractor import Extractor
 W = 1280 # 1920 // 2
 H = 720 # 1080 // 2
 
-F = 282
+F = 250
 K = np.array([[F, 0, W//2], [0, F, H//2], [0, 0, 1]])
 fe = Extractor(K)
 
@@ -34,7 +34,8 @@ if __name__ == '__main__':
         if ret == True:
             process_frame(frame)
             # Press Q on keyboard to  exit
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            k = cv2.waitKey(1)
+            if k == 27:
                 break
         else:
             break
