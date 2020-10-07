@@ -12,8 +12,6 @@ f_est_avg = []
 def extractRt(EssentialMatrix):
     E = EssentialMatrix
     U, w, Vt = np.linalg.svd(E)
-    # print(np.linalg.det(U))
-    # print(np.linalg.det(Vt))
 
     # assert np.linalg.det(U) > 0, "check det of U"
     if np.linalg.det(U) < 0:
@@ -25,7 +23,10 @@ def extractRt(EssentialMatrix):
     if np.sum(R.diagonal()) < 0:
         R = np.dot(np.dot(U, W.T), Vt)
     t = U[:, 2]
-    return R, t
+    Rt = np.concatenate([R, t.reshape(3, 1)], axis=1)
+    return Rt
+
+
 class Extractor(object):
     # GX = 16//2
     # GY = 12//2
@@ -66,6 +67,7 @@ class Extractor(object):
                     ret.append((kp1, kp2))
 
         # filter
+        Rt=None
         if len(ret) > 0:
             ret = np.asarray(ret)
             # normalize coordes, subtract to move to 
@@ -79,8 +81,7 @@ class Extractor(object):
                                         residual_threshold = 0.01, 
                                         max_trials = 100)
             ret = ret[inliners]
-            R, t = extractRt(model.params)
-            print(R, t)
+            Rt = extractRt(model.params)
         self.last = {'kps': kps, 'des': des}
         # print(f_est, np.mean(f_est_avg))
-        return ret
+        return ret, Rt

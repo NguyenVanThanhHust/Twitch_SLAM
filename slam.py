@@ -2,22 +2,32 @@ import cv2
 import time
 import numpy as np
 from extractor import Extractor
+from frame import Frame, normalize, denormalize, match_frames
+import g2o
 
+
+# camera instrinsics
 W = 1280 # 1920 // 2
 H = 720 # 1080 // 2
 
 F = 250
 K = np.array([[F, 0, W//2], [0, F, H//2], [0, 0, 1]])
-fe = Extractor(K)
+extractor = Extractor(K)
 
+frames = []
 def process_frame(img):
     img = cv2.resize(img, (960, 540))
+    frame = Frame(img, K)
+    frames.append(frame)
+    if len(frames) <= 1:
+        return
+
     h, w, c = img.shape
     # find the keypoints with ORB
-    matches = fe.extract(img)
-    for p1, p2 in matches:
-        u1, v1 = fe.denormalize(p1)
-        u2, v2 = fe.denormalize(p2)
+    ret, Rt = match_frames(frames[-1], frames[-2])
+    for p1, p2 in ret:
+        u1, v1 = denormalize(K, p1)
+        u2, v2 = denormalize(K, p2)
 
         cv2.line(img, (u1, v1), (u2, v2), (0, 255, 255), 1)
         cv2.circle(img, (u1,v1), 5, (0, 255, 0), 1)
