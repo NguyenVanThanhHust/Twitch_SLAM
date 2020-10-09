@@ -28,11 +28,14 @@ def extractRt(EssentialMatrix):
         R = np.dot(np.dot(U, W.T), Vt)
     t = U[:, 2]
     Rt = np.concatenate([R, t.reshape(3, 1)], axis=1)
-    return Rt
+    print(Rt.shape)
+    ret = np.eye(4)
+    ret[:3, :3] = R
+    ret[:3, 3] = t
+    return ret
 
 def normalize(Kinv, pts):
     pts_add1 = add_one(pts)
-    print(pts_add1.shape)
     return np.dot(Kinv, pts_add1.T).T[:, 0:2]
 
 def denormalize(K, pt):
@@ -55,37 +58,41 @@ def match_frames(f1, f2):
     matches = bf.knnMatch(f1.des, f2.des, k = 2)
     
     ret = []
+    idx1, idx2 = [], []
     for m, n in matches:
         if m.distance < 0.75 * n.distance:
+            idx1.append(m.queryIdx)
+            idx2.append(m.trainIdx)
             p1 = f1.pts[m.queryIdx]
             p2 = f2.pts[m.trainIdx]
             ret.append((p1, p2))
 
+    idx1 = np.array(idx1)
+    idx2 = np.array(idx2)
     # filter
     assert len(ret) >= 8
     ret = np.asarray(ret)
-    # normalize coordes, subtract to move to 
-    # ret[:, 0, :] = normalize(Kinv, ret[:, 0, :])
-    # ret[:, 1, :] = normalize(Kinv, ret[:, 1, :])
-
     model, inliners = ransac((ret[:, 0], ret[:, 1]), 
                                 # FundamentalMatrixTransform, 
                                 EssentialMatrixTransform, 
                                 min_samples = 8, 
                                 residual_threshold = 0.01, 
                                 max_trials = 100)
-    ret = ret[inliners]
+    # ret = ret[inliners]
     Rt = extractRt(model.params)
-    return ret, Rt
+    idx1 = idx1[inliners]
+    idx2 = idx2[inliners]
+
+    return idx1, idx2, ret, Rt
 
 class Frame(object):
-    def __init__(self, img, K):
+    def __init__(self, img, K, pose=np.eye(4)):
         self.K = K
         self.Kinv = np.linalg.inv(self.K)
 
         pts, self.des = extract(img)
         self.pts = normalize(self.Kinv, pts)
-
+        self.pose = pose
 class Extractor(object):
     # GX = 16//2
     # GY = 12//2
