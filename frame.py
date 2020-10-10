@@ -86,13 +86,16 @@ def match_frames(f1, f2):
     return idx1, idx2, ret, Rt
 
 class Frame(object):
-    def __init__(self, img, K, pose=np.eye(4)):
+    def __init__(self, mapp, img, K, pose=np.eye(4)):
         self.K = K
         self.Kinv = np.linalg.inv(self.K)
 
         pts, self.des = extract(img)
         self.pts = normalize(self.Kinv, pts)
         self.pose = pose
+        self.id = len(mapp.frames)
+        mapp.frames.append(self)
+        
 class Extractor(object):
     # GX = 16//2
     # GY = 12//2
