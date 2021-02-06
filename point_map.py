@@ -10,11 +10,11 @@ class Point(object):
   # A Point is a 3-D point in the world
   # Each Point is observed in multiple Frames
 
-    def __init__(self, mapp, loc):
+    def __init__(self, mapp, loc, color):
         self.pt = loc
         self.frames = []
         self.idxs = []
-        
+        self.color = np.copy(color)
         self.id = len(mapp.points)
         mapp.points.append(self)
 
@@ -110,30 +110,31 @@ class Map(object):
         self.dcam.SetHandler(self.handler)
 
     def viewer_refresh(self, q):
-      if self.state is None or not q.empty():
-          self.state = q.get()
+        if self.state is None or not q.empty():
+            self.state = q.get()
 
-      gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-      gl.glClearColor(1.0, 1.0, 1.0, 1.0)
-      self.dcam.Activate(self.scam)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gl.glClearColor(1.0, 1.0, 1.0, 1.0)
+        self.dcam.Activate(self.scam)
 
-      # draw poses
-      gl.glColor3f(0.0, 1.0, 0.0)
-      pangolin.DrawCameras(self.state[0])
+        # draw poses
+        gl.glColor3f(0.0, 1.0, 0.0)
+        pangolin.DrawCameras(self.state[0])
 
-      # draw keypoints
-      gl.glPointSize(2)
-      gl.glColor3f(1.0, 0.0, 0.0)
-      pangolin.DrawPoints(self.state[1])
+        # draw keypoints
+        gl.glPointSize(5)
+        gl.glColor3f(1.0, 0.0, 0.0)
+        pangolin.DrawPoints(self.state[1], self.state[2])
 
-      pangolin.FinishFrame()
+        pangolin.FinishFrame()
 
     def display(self):
-      poses, pts = [], []
-      for f in self.frames:
-          poses.append(f.pose)
-      for p in self.points:
-          pts.append(p.pt)
-      self.q.put((np.array(poses), np.array(pts)))
+        poses, pts, colors = [], [], []
+        for f in self.frames:
+            poses.append(f.pose)
+        for p in self.points:
+            pts.append(p.pt)
+            colors.append(p.color)
+        self.q.put((np.array(poses), np.array(pts), np.array(colors)/256.0))
 
 

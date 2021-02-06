@@ -105,8 +105,8 @@ class Frame(object):
         self.pose = IRt
         self.h, self.w = img.shape[0:2]
 
-        pts, self.des = extract(img)
-        self.kps = normalize(self.Kinv, pts)
+        self.kpus, self.des = extract(img)
+        self.kps = normalize(self.Kinv, self.kpus)
         self.pts = [None] * len(self.kps)
         self.id = len(mapp.frames)
         mapp.frames.append(self)
